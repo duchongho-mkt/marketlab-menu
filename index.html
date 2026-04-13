@@ -35,14 +35,36 @@
       'bg-lime-100 text-lime-800 border-lime-200'
     ];
 
+    const useLocalStorage = (key, initialValue) => {
+      const [storedValue, setStoredValue] = useState(() => {
+        try {
+          const item = window.localStorage.getItem(key);
+          return item ? JSON.parse(item) : initialValue;
+        } catch (error) {
+          console.error(error);
+          return initialValue;
+        }
+      });
+
+      useEffect(() => {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(storedValue));
+        } catch (error) {
+          console.error(error);
+        }
+      }, [key, storedValue]);
+
+      return [storedValue, setStoredValue];
+    };
+
     function App() {
       // --- STATE QUẢN LÝ NGUYÊN LIỆU (CÀI ĐẶT) ---
-      const [noodleTypes, setNoodleTypes] = useState([
+      const [noodleTypes, setNoodleTypes] = useLocalStorage('marketlab_noodleTypes', [
         { id: 'noodle_1', name: 'Mì gói thường', price: 6000 },
         { id: 'noodle_2', name: 'Mì gói cao cấp', price: 30000 },
       ]);
 
-      const [toppingTypes, setToppingTypes] = useState([
+      const [toppingTypes, setToppingTypes] = useLocalStorage('marketlab_toppingTypes', [
         { id: 'chicken', name: 'Ức gà viên', pricePerKg: 180000, yieldPerKg: 75, color: 'bg-amber-100 text-amber-800 border-amber-200' },
         { id: 'pork', name: 'Heo viên', pricePerKg: 270000, yieldPerKg: 75, color: 'bg-rose-100 text-rose-800 border-rose-200' },
         { id: 'beef', name: 'Thăn bò viên', pricePerKg: 300000, yieldPerKg: 75, color: 'bg-red-100 text-red-800 border-red-200' },
@@ -53,15 +75,15 @@
       // --- STATE TÍNH TOÁN (ORDER HIỆN TẠI) ---
       const [noodleSelections, setNoodleSelections] = useState({'noodle_1': 1});
       const [toppingSelections, setToppingSelections] = useState({});
-      const [otherCosts, setOtherCosts] = useState(2000);
-      const [profitMargin, setProfitMargin] = useState(40);
+      const [otherCosts, setOtherCosts] = useLocalStorage('marketlab_otherCosts', 2000);
+      const [profitMargin, setProfitMargin] = useLocalStorage('marketlab_profitMargin', 40);
       
       // Tùy chỉnh giá bán
       const [customSalePrice, setCustomSalePrice] = useState('');
 
       // --- STATE QUẢN LÝ MENU & GIAO DIỆN ---
       const [activeTab, setActiveTab] = useState('calculator'); // 'calculator', 'menu', 'settings'
-      const [menuItems, setMenuItems] = useState([]);
+      const [menuItems, setMenuItems] = useLocalStorage('marketlab_menuItems', []);
       const [productName, setProductName] = useState('');
 
       // --- STATE FORM THÊM NGUYÊN LIỆU MỚI ---

@@ -70,6 +70,10 @@
       const [newMatPrice, setNewMatPrice] = useState('');
       const [newMatYield, setNewMatYield] = useState(75);
 
+      // --- STATE FORM SỬA NGUYÊN LIỆU ---
+      const [editingId, setEditingId] = useState(null);
+      const [editForm, setEditForm] = useState({ name: '', price: '', yieldPerKg: 75, type: 'noodle' });
+
       // --- FUNCTIONS: CẬP NHẬT SỐ LƯỢNG ---
       const updateQuantity = (type, id, delta) => {
         if (type === 'noodle') {
@@ -200,6 +204,30 @@
           delete newSelections[id];
           setToppingSelections(newSelections);
         }
+      };
+
+      // --- FUNCTIONS: SỬA NGUYÊN LIỆU ---
+      const handleEditClick = (type, item) => {
+        setEditingId(item.id);
+        if (type === 'noodle') {
+          setEditForm({ name: item.name, price: item.price, yieldPerKg: 75, type: 'noodle' });
+        } else {
+          setEditForm({ name: item.name, price: item.pricePerKg, yieldPerKg: item.yieldPerKg, type: 'topping' });
+        }
+      };
+
+      const handleSaveEdit = () => {
+        if (!editForm.name.trim() || !editForm.price) return;
+        if (editForm.type === 'noodle') {
+          setNoodleTypes(prev => prev.map(n => n.id === editingId ? { ...n, name: editForm.name, price: Number(editForm.price) } : n));
+        } else {
+          setToppingTypes(prev => prev.map(t => t.id === editingId ? { ...t, name: editForm.name, pricePerKg: Number(editForm.price), yieldPerKg: Number(editForm.yieldPerKg) || 1 } : t));
+        }
+        setEditingId(null);
+      };
+      
+      const handleCancelEdit = () => {
+        setEditingId(null);
       };
 
       return (
@@ -627,14 +655,40 @@
                       </h3>
                       <div className="space-y-3">
                         {noodleTypes.map(item => (
-                          <div key={item.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-                            <div>
-                              <p className="font-bold text-slate-800">{item.name}</p>
-                              <p className="text-sm text-slate-500">{formatCurrency(item.price)}/gói</p>
-                            </div>
-                            <button onClick={() => handleDeleteMaterial('noodle', item.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
-                              <i className="ph-bold ph-trash text-lg"></i>
-                            </button>
+                          <div key={item.id}>
+                            {editingId === item.id ? (
+                              <div className="flex flex-col gap-3 p-4 bg-indigo-50/50 rounded-xl border border-indigo-200">
+                                <div className="space-y-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Tên hiển thị</label>
+                                    <input type="text" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Giá (VNĐ) / Gói</label>
+                                    <input type="number" value={editForm.price} onChange={(e) => setEditForm({...editForm, price: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2 mt-1 border-t border-indigo-100 pt-3">
+                                  <button onClick={handleCancelEdit} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg">Hủy</button>
+                                  <button onClick={handleSaveEdit} className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Lưu Thay Đổi</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100 group">
+                                <div>
+                                  <p className="font-bold text-slate-800 group-hover:text-amber-600 transition-colors">{item.name}</p>
+                                  <p className="text-sm text-slate-500">{formatCurrency(item.price)}/gói</p>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleEditClick('noodle', item)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Sửa tên & giá">
+                                    <i className="ph-bold ph-pencil-simple text-lg"></i>
+                                  </button>
+                                  <button onClick={() => handleDeleteMaterial('noodle', item.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Xóa nguyên liệu">
+                                    <i className="ph-bold ph-trash text-lg"></i>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -648,16 +702,48 @@
                       </h3>
                       <div className="space-y-3">
                         {toppingTypes.map(item => (
-                          <div key={item.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-                            <div>
-                              <p className="font-bold text-slate-800">{item.name}</p>
-                              <p className="text-sm text-slate-500">
-                                Cost: {formatCurrency(Math.round(item.pricePerKg / item.yieldPerKg))}/viên <span className="mx-1">•</span> {formatCurrency(item.pricePerKg)}/kg
-                              </p>
-                            </div>
-                            <button onClick={() => handleDeleteMaterial('topping', item.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
-                              <i className="ph-bold ph-trash text-lg"></i>
-                            </button>
+                          <div key={item.id}>
+                            {editingId === item.id ? (
+                              <div className="flex flex-col gap-3 p-4 bg-indigo-50/50 rounded-xl border border-indigo-200">
+                                <div className="space-y-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Tên hiển thị</label>
+                                    <input type="text" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                                  </div>
+                                  <div className="flex gap-3">
+                                    <div className="flex-1">
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">Giá / Kg</label>
+                                      <input type="number" value={editForm.price} onChange={(e) => setEditForm({...editForm, price: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                                    </div>
+                                    <div className="w-24">
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">Viên / Kg</label>
+                                      <input type="number" value={editForm.yieldPerKg} onChange={(e) => setEditForm({...editForm, yieldPerKg: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2 mt-1 border-t border-indigo-100 pt-3">
+                                  <button onClick={handleCancelEdit} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg">Hủy</button>
+                                  <button onClick={handleSaveEdit} className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Lưu Thay Đổi</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100 group">
+                                <div>
+                                  <p className="font-bold text-slate-800 group-hover:text-rose-600 transition-colors">{item.name}</p>
+                                  <p className="text-sm text-slate-500 mt-0.5">
+                                    <span className="font-medium text-slate-600 border border-slate-200 bg-white px-1.5 py-0.5 rounded mr-1">Cost: {formatCurrency(Math.round(item.pricePerKg / item.yieldPerKg))}/viên</span> <span className="mx-1 opacity-50">•</span> {formatCurrency(item.pricePerKg)}/kg <span className="opacity-60 text-[11px]">({item.yieldPerKg}v)</span>
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleEditClick('topping', item)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Sửa giá & định lượng">
+                                    <i className="ph-bold ph-pencil-simple text-lg"></i>
+                                  </button>
+                                  <button onClick={() => handleDeleteMaterial('topping', item.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Xóa nguyên liệu">
+                                    <i className="ph-bold ph-trash text-lg"></i>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

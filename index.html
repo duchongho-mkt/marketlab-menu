@@ -96,6 +96,10 @@
       const [editingId, setEditingId] = useState(null);
       const [editForm, setEditForm] = useState({ name: '', price: '', yieldPerKg: 75, type: 'noodle' });
 
+      // --- STATE SỬA MENU ---
+      const [editingMenuId, setEditingMenuId] = useState(null);
+      const [editMenuForm, setEditMenuForm] = useState({ name: '', price: '' });
+
       // --- FUNCTIONS: CẬP NHẬT SỐ LƯỢNG ---
       const updateQuantity = (type, id, delta) => {
         if (type === 'noodle') {
@@ -185,6 +189,30 @@
 
       const handleDeleteMenu = (id) => {
         setMenuItems(menuItems.filter(item => item.id !== id));
+      };
+
+      const handleEditMenuClick = (item) => {
+        setEditingMenuId(item.id);
+        setEditMenuForm({ name: item.name, price: item.price });
+      };
+
+      const handleSaveMenuEdit = () => {
+        if (!editMenuForm.name.trim() || !editMenuForm.price) return;
+        const newPrice = Number(editMenuForm.price);
+        
+        setMenuItems(prev => prev.map(item => {
+          if (item.id === editingMenuId) {
+            const profit = newPrice - item.cost;
+            const margin = newPrice > 0 ? (profit / newPrice) * 100 : 0;
+            return { ...item, name: editMenuForm.name, price: newPrice, profit, margin };
+          }
+          return item;
+        }));
+        setEditingMenuId(null);
+      };
+
+      const handleCancelMenuEdit = () => {
+        setEditingMenuId(null);
       };
 
       // --- FUNCTIONS: CÀI ĐẶT NGUYÊN LIỆU ---
@@ -537,14 +565,31 @@
                           <div className="absolute -right-6 -top-6 text-slate-800 opacity-50 transform rotate-12">
                             <i className="ph-bold ph-chef-hat text-[80px]"></i>
                           </div>
-                          <h3 className="font-bold text-xl leading-tight pr-4 relative z-10">{item.name}</h3>
-                          <button 
-                            onClick={() => handleDeleteMenu(item.id)}
-                            className="text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700 p-2 rounded-lg transition-colors relative z-10"
-                            title="Xóa món"
-                          >
-                            <i className="ph-bold ph-trash text-base"></i>
-                          </button>
+                          {editingMenuId === item.id ? (
+                            <div className="w-full relative z-10 space-y-2 pr-2">
+                              <input type="text" value={editMenuForm.name} onChange={(e) => setEditMenuForm({...editMenuForm, name: e.target.value})} className="w-full px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 font-bold" placeholder="Tên món" />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400 font-semibold w-8">Giá:</span>
+                                <input type="number" value={editMenuForm.price} onChange={(e) => setEditMenuForm({...editMenuForm, price: e.target.value})} className="w-full px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 font-bold" placeholder="Giá bán" />
+                              </div>
+                              <div className="flex justify-end gap-2 pt-1 border-t border-slate-800 mt-2">
+                                <button onClick={handleCancelMenuEdit} className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">Hủy</button>
+                                <button onClick={handleSaveMenuEdit} className="px-3 py-1.5 text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 rounded-lg shadow-sm transition-colors">Lưu</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="font-bold text-xl leading-tight pr-4 relative z-10">{item.name}</h3>
+                              <div className="flex gap-1 relative z-10 flex-shrink-0">
+                                <button onClick={() => handleEditMenuClick(item)} className="text-slate-400 hover:text-indigo-400 bg-slate-800 hover:bg-slate-700 p-2 rounded-lg transition-colors" title="Sửa tên & giá">
+                                  <i className="ph-bold ph-pencil-simple text-base"></i>
+                                </button>
+                                <button onClick={() => handleDeleteMenu(item.id)} className="text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700 p-2 rounded-lg transition-colors" title="Xóa món">
+                                  <i className="ph-bold ph-trash text-base"></i>
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div className="p-5 flex-1 flex flex-col">
                           <div className="text-sm text-slate-600 mb-4 flex-1 space-y-2.5">
